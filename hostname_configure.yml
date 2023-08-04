@@ -1,0 +1,21 @@
+---
+- name: Change hostname for computers in the domain
+  hosts: your_target_hosts
+  become: true
+
+  tasks:
+    - name: Change the hostname
+      hostname:
+        name: "{{ new_hostname }}"
+      notify:
+        - restart_network
+    - name: Wait for the machine to be reachable
+      wait_for_connection:
+        delay: 10
+        timeout: 300
+
+  handlers:
+    - name: Restart network service
+      service:
+        name: network
+        state: restarted
