@@ -1,0 +1,39 @@
+---
+- name: Join Linux machine to FreeIPA domain
+  hosts: your_target_host
+  become: true
+
+  vars:
+    ipa_realm: YOUR_IPA_REALM #EXAMPLE.COM
+    ipa_domain: YOUR_IPA_DOMAIN #example.com
+    ipa_server: YOUR_IPA_SERVER #server hostname or IP address
+    ipa_principal: YOUR_IPA_PRINCIPAL #administrative principal (user) used to join the machine to the domain. Example: admin@EXAMPLE.COM
+    ipa_principal_password: YOUR_IPA_PRINCIPAL_PASSWORD #Password for administrative principal (user)
+
+  tasks:
+    - name: Install necessary packages for FreeIPA client
+      package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - ipa-client
+        - oddjob
+        - oddjob-mkhomedir
+        - sssd
+
+    - name: Configure FreeIPA client
+      freeipa_client:
+        state: present
+        domain: "{{ ipa_domain }}"
+        realm: "{{ ipa_realm }}"
+        server: "{{ ipa_server }}"
+        principal: "{{ ipa_principal }}"
+        password: "{{ ipa_principal_password }}"
+      notify:
+        - restart_sssd
+
+  handlers:
+    - name: Restart SSSD service
+      service:
+        name: sssd
+        state: restarted
